@@ -51,18 +51,6 @@ sampling_frequency = stream.channel_infos[channel_id].sampling_frequency.magnitu
 data = channel_raw_data.recordings[0].analog_streams[0].channel_data[:, 0:]
 aspect_ratio = 1000
 
-
-# plt.figure(figsize=(20,12))
-
-# plt.set_cmap("jet")
-# plt.imshow(data,)# interpolation='nearest', )
-# plt.colorbar()
-# plt.xlabel('Sample Index')
-# plt.ylabel('Channel Number')
-# plt.title('BCNU Basal 6')
-# plt.show()
-
-
 #%%
 
 #### Downsampling from 25kHz to 1.25 kHz len 900 s
