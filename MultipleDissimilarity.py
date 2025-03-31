@@ -20,15 +20,6 @@ import matplotlib.pyplot as plt
 from scipy.spatial import Delaunay
 
 
-# MatArrange = np.random.random((45,59,59))
-
-# n = 49
-# M = np.random.randint(-2000,2000,(n,n))
-# symm = M@M.T
-# # test for symmetry
-# print(symm == symm.T)
-
-
 def RandMat(n):
     n = 5
     r = np.random.rand(n*(n+1)//2)
