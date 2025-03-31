@@ -21,7 +21,7 @@ import math
 import numpy as np
 
 
-# Data exploration
+# Data IMPORTATION AND EXPLORATION
 
 test_data_folder = r'/media/2TB_HDD/AnaAquiles'          
 channel_raw_data = McsPy.McsData.RawData(os.path.join(
@@ -125,94 +125,9 @@ for i in range(0,60):
 
 DownData = np.array(DownSample)
 
-
+## save you downsampled data 
 np.savetxt('AP011-CTRL-basal-DWSAMPLE.csv', DownData, delimiter = ',')
 
-
-order = 5
-fs = 1000 
-cutoff = 200
-nyq = 0.5 * fs
-
-channel = data[35,:].astype(float)                                              # select the channel that you wanna try
-Dchannel = signal.resample(channel, down)                                       # how many samples are necesary to acquiere 900 seconds  at 1.25 kHz
-Time = np.linspace(0,u_T,len(Dchannel))
-
-def butter_lowpass_filter(data, cutoff, fs, order):
-    normal_cutoff = cutoff / nyq
-    # Get the filter coefficients 
-    b, a = butter(order, normal_cutoff, btype='low', analog=False)
-    y = filtfilt(b, a, data)
-    return y
-    
-filtered = []
-for i in range(0,60):
-    filtered.append(butter_lowpass_filter(DownData[i,:], cutoff, fs, order))
-    
-DataFilt = np.array(filtered)
-
-np.savetxt('AP011-Basal-CTRL-DWSAMPLE.csv', DownData, delimiter = ',')
-
-#%%
-
-### 
-
-filename="AP016-Basal-BCNU-DWSAMPLE"
-DataFilt = np.loadtxt(filename + ".csv",delimiter=',')
-
-order = 5
-fs = 1000 
-cutoff = 12
-nyq = 0.5 * fs
-
-Time = np.linspace(0,u_T,len(Dchannel))
-
-def butter_lowpass_filter(data, cutoff, fs, order):
-    normal_cutoff = cutoff / nyq
-    # Get the filter coefficients 
-    b, a = butter(order, normal_cutoff, btype='low', analog=False)
-    y = filtfilt(b, a, data)
-    return y
-    
-filtered = []
-for i in range(0,60):
-    filtered.append(butter_lowpass_filter(DataFilt[i], cutoff, fs, order))
-    
-DataFilt2 = np.array(filtered)
-
-
-### Reorder the electrodes according to the MEA 60  200/
-
-Array = [23,25,28,31,34,36,20,21,24,29,30,35,38,39,18,19,22,
-          27,32,37,40,41,15,16,17,26,33,42,43,44,
-          14,13,12,3,56,47,46,45,11,10,7,2,57,52,
-          49,48,9,8,5,0,59,54,51,50,6,4,1,58,55,53]
-
-idx = np.empty_like(Array)
-idx[Array] = np.arange(len(Array))
-
-DataFilt2[:] = DataFilt2[idx,:]
-
-plt.matshow(DataFilt[:,:60000], interpolation='nearest', aspect ='auto', 
-            cmap='RdYlBu', 
-           vmin =-1000,vmax=1000) 
-plt.title('CTRL Basal activity 1 minute')
-plt.box(False)
-plt.ylabel('Channel')
-plt.xlabel('Time (s)')
-plt.colorbar()
-
-
-# f, t, Sxx = signal.spectrogram(DataFilt[43,:], fs, noverlap = 100, nfft = 1000 )
-
-# plt.figure(2)
-# plt.pcolormesh(t, f, Sxx, vmin= 500, vmax= 2500)
-# plt.ylabel('Frequency [Hz]')
-# plt.xlabel('Time [sec]')
-# plt.ylim(0,10)
-# plt.colorbar()
-# plt.show()
-#%%
 
 #### BAND PASS EXPLORATION
 
@@ -246,34 +161,10 @@ idx = np.empty_like(Array)
 idx[Array] = np.arange(len(Array))
 
 DataFiltBP[:] = DataFiltBP[idx,:]
-#%%
 
-a = 10
-b = 1
-c = 1
-
-
-fig = plt.figure(2,figsize =(36,8))
-
-for i in range(10,20,1):
-    plt.subplot(a,b,c)
-    plt.title('Channel {}, subplot: {},{},{}'.format(i,a,b,c))
-    plt.plot(DataFiltBP[i, :])
-    plt.box(False)
-    c = c + 1
-
-
-#%%
-
-fig, axs = plt.subplots(nrows=30, ncols=1, figsize = (15,12))  
-plt.subplots_adjust(hspace=0.)
-
-for n in enumerate(len(DownData,axis=0)):
-    ax = plt.subplot(DownData[n,:400000])
-    
-    
     
 #%%
+####### EXPLORE YOUR ORIGINAL, DOWNSAMPLED AND BAND FILTERED DATA 
 
 plt.figure(2)
 plt.subplot(411)
