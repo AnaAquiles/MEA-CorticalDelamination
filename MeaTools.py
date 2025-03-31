@@ -20,13 +20,10 @@ from scipy import signal
 import math
 import numpy as np
 
-# import bokeh.io
-# import bokeh.plottinging 
-# # from bokeh.palettes import Spectral11
 
 # Data exploration
 
-test_data_folder = r'/media/2TB_HDD/AnaAquiles'          # /AnaAquiles/AP062021adjust this!
+test_data_folder = r'/media/2TB_HDD/AnaAquiles'          
 channel_raw_data = McsPy.McsData.RawData(os.path.join(
     test_data_folder, 'AP005_BCNU_p35_60_200_cero0002.h5'))
 
@@ -36,13 +33,8 @@ analog_stream_0_data = analog_stream_0.channel_data
 
 np_analog_stream_0_data = np.transpose(analog_stream_0_data)
 
-# print("Old shape:", analog_stream_0_data.shape)
-# print("New shape:", np_analog_stream_0_data.shape)
-# print()
-# print(np_analog_stream_0_data)
-
 channel_ids = channel_raw_data.recordings[0].analog_streams[0].channel_infos.keys()
-# print(channel_ids)
+print(channel_ids)
 
 channel_id = list(channel_raw_data.recordings[0].analog_streams[0].channel_infos.keys())[0]
 
@@ -114,25 +106,6 @@ y = butter_lowpass_filter(Dchannel, cutoff, fs, order)
 
 plt.plot(Time, Dchannel,'go-', Time, y, '.-', 900, Dchannel[0],'ro')
 
-# def butter_lowpass(cutoff, fs, order=5):
-#     nyq = 0.5 * fs
-#     normal_cutoff = cutoff / nyq
-#     b, a = butter(order, normal_cutoff, btype='low', analog=False)
-#     return b, a
-
-# def butter_lowpass_filter(data, cutoff, fs, order=5):
-#     b, a = butter_lowpass(cutoff, fs, order=order)
-#     y = lfilter(b, a, data)
-#     return y
-    
-# order = 2
-# fs = 1250  
-# cutoff = 100
-
-# b, a = butter_lowpass(cutoff, fs, order)
-
-# y = butter_lowpass_filter(Dchannel, cutoff, fs, order)
-# y = butter_lowpass_filter(Dchannel, cutoff, fs, order)
 
 
 #%%
@@ -241,7 +214,7 @@ plt.colorbar()
 # plt.show()
 #%%
 
-#### BAND PASS COHERENCE
+#### BAND PASS EXPLORATION
 
 from scipy.signal import butter, lfilter
 
@@ -329,151 +302,4 @@ plt.legend()
 plt.box(False)
 
 
-PowerT, frec, y = plt.magnitude_spectrum(DataFilt[28,:5000],Fs =1250,
-                                                color = 'coral', alpha = 1, 
-                       label = 'Magnitude Spectrum')
 
-Baseline = np.min(powerSpectrum)                                              #4 seconds window
-PowerN = np.log10(powerSpectrum/Baseline)
-
-
-#%%
-
-
-#### Signal decomposition
-
-from scipy.signal import hilbert
-from matplotlib import pyplot 
-import math
-
-fourier = np.fft.fft(DataFilt2)
-hilbert = hilbert(DataFilt2)
-amplitude_envelope = np.abs(hilbert) # np.abs(fourier)
-
-# Amplitude_Valuemeantime = np.mean(amplitude_envelope,axis=1)*1e2
-AmpNorm = np.log10(amplitude_envelope/ (np.min(amplitude_envelope)))
-
-
-plt.figure(1)
-plt.clf()
-pyplot.imshow(AmpNorm[:,:], 
-               aspect ='auto', cmap='jet', vmax=6.5)
-plt.xlabel('Time')
-plt.ylabel('Channels')
-plt.title('BCNU 009 Basal, 15 min')
-plt.colorbar()
-plt.grid(False)
-plt.box(False)
-
-#%%
-
-for i in range(0,59):
-    f, t,Sxx = signal.spectrogram(DataFiltBP[i,:], 1000, noverlap = 250, nfft = 600,)
-
-plt.pcolormesh(t, f,(Sxx), cmap = "jet",)# vmax = 5000) #10*np.log10 #Blues para CTRL
-plt.colorbar()
-plt.xlim(0,301)
-plt.ylim(1,20)
-plt.ylabel('Frequency [Hz]')
-plt.xlabel('Time [sec]')
-
-
-#%%
-
-## 05/10/22 
-
-"""
-      ANALISIS DE REGISTROS DESPUÉS DEL DOWNSAMPLING 1KHz    
-      
-      - ISPC, con descomposición de Hilbert 
-"""
-from scipy.signal import hilbert
-from matplotlib import pyplot 
-import math
-
-# https://towardsdatascience.com/instantaneous-phase-and-magnitude-with-the-hilbert-transform-40a73985be07
-fs = 1000
-### 
-
-filename="AP016-Basal-BCNU-DWSAMPLE"
-DataFilt = np.loadtxt(filename + ".csv",delimiter=',')
-
-z= hilbert(DataFilt)                                                            #form the analytical signal
-Amp = np.abs(z)                                                                 #envelope extraction
-Phase = np.angle(z)                                                             #inst phase
-inst_freq = np.diff(Phase)/(2*np.pi)*fs                                         #inst frequency
-
-
-# Phase of 2 minute 
-
-
-PhSh = Phase[:,:60000]                                                          # - 1 min
-Challenge = PhSh[7,:] - PhSh[10,:]
-
-Freq = inst_freq[10,:600000]
-Time = np.linspace(0,600,len(Freq))
-
-# f, t,Sxx = signal.spectrogram(DataFilt[7,:600000], 1000, noverlap = 250, nfft = 600,)
-
-size = (301,600000)
-M = np.zeros(size)
-
-for i in range(0, len(M)):
-    x[i] = f
-    y[i] = Time
-    Mat[x][y] = Probe[i]
-    
-
-# X,Y = np.meshgrid(f,Probe)
-# plt.contour(f, Time, Y)
-
-#%%
-
-### 1 way to obtain phase coherence 
-
-
-#https://github.com/emma-holmes/Phase-Coherence-for-Python/blob/master/PhaseCoherence.py
-
-def PhaseCoherence(freq, timeSeries, FS):
-    
-    # Get parameters of input data
-    nMeasures	 = np.shape(timeSeries)[0]
-    nSamples 	= np.shape(timeSeries)[1]
-    nSecs = nSamples / FS
-    print('Number of measurements =', nMeasures)
-    print('Number of time samples =', nSamples, '=', nSecs, 'seconds')
-    
-    # Calculate FFT for each measurement (spect is freq x measurements)
-    spect = np.fft.fft(timeSeries, axis=1)
-    
-    # Normalise by amplitude
-    spect = spect / abs(spect)
-    
-    # Find spectrum values for frequency bin of interest
-    freqRes = 1 / nSecs;
-    foibin = round(freq / freqRes + 1) - 1
-    spectFoi = spect[:,foibin]
-    
-    # Find individual phase angles per measurement at frequency of interest
-    anglesFoi = np.arctan2(spectFoi.imag, spectFoi.real)
-    
-    # PC is root mean square of the sums of the cosines and sines of the angles
-    PC = np.sqrt((np.sum(np.cos(anglesFoi)))**2 + (np.sum(np.sin(anglesFoi)))**2) / np.shape(anglesFoi)[0]
-    
-    # Print the value
-    print('----------------------------------');
-    print('Phase coherence value = ' + str("{0:.3f}".format(PC)));
-        
-    return PC
-
-PhSh = Phase[:,:60000]                                                          # - 1 min
-Probe = PhSh[7,:] - PhSh[10,:]
-
-Freq = inst_freq[10,:600000]
-Time = np.linspace(0,600,len(Freq))
-
-PhCoherence = []
-
-for i in range(1,10,1):
-    PhCoherence.append(PhaseCoherence(i, Signals, FS = 1000))
-    
