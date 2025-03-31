@@ -1,3 +1,4 @@
-# Multielectrode array
-LFP and unit analysis of 60 electrodes recordings.
-Load data from MDS record system and analyse the Time-Series using spectral decomposition.
+# Multielectrode array evaluation with cortical delamination 
+
+The following repository contains all the code generated and used to describe the the degree of cortical delamination through electrical pattern analysis. 
+In general way you will found the functions to load and downsampling data from MSC software, using hierarchical data files hdf5. 
