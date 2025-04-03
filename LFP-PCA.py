@@ -57,7 +57,7 @@ Array = [23,25,28,31,34,36,20,21,24,29,30,35,38,39,18,19,22,
 
 idx = np.empty_like(Array)
 idx[Array] = np.arange(len(Array))
-# Time = np.linspace(0,900,len(Dchannel))
+
 
 DataFiltBP[:] = DataFiltBP[idx,:]
 DataFiltBP = np.delete(DataFiltBP, 30,0) #electrode reference position
@@ -79,7 +79,7 @@ plt.style.use('fivethirtyeight')
 '''
 ###     Power spectrum only from the frequencies 0.5-100 Hz
          #Fitting of aperiodic exponent using the same formula
-             of the paper 2022 Thomas Donoghue Technical Report NATURE
+        of the paper 2022 Thomas Donoghue Technical Report NATURE
 
 '''
 ###  USING LINEAR REGRESSION AND #### Lorentzian Function 
@@ -97,13 +97,10 @@ def powerSpec(datos,fs, th):
     normPow = powerspec/totalPow
     
     PowN = normPow[indices]
-      
-    # using linear regression
-    # slope,intercept, r, p , stderr = linregress(log_freq,log_power)
-    # aperiodicExp = -slope
+  
     return Freq,Pow,PowN
 
-# Alpha, Freqs, PowerS, Ind = powerSpec(DataFiltBP[5,:100000],1000,100)
+
     
 Freqs = np.zeros((59,49950)) #150001 - 5 min  # 50001 -100 s  #5001 - 10s
 PowerN = np.zeros((59, 49950))
@@ -118,8 +115,8 @@ for i in range(59):
 ##### #### Lorentzian Function 
 
 
-def combinedMod(f,alpha,k):
-    return -(np.log(k + f**(alpha))) #### Lorentzian Function 
+def combinedMod(bias, f,alpha,k):
+    return bias-(np.log(k + f**(alpha))) #### Lorentzian Function 
 
 def fit (freqs,Power):
     popt, pcov = curve_fit(combinedMod, freqs, Power)
@@ -152,7 +149,7 @@ for j in range(59):
     plt.xscale('log')
     plt.yscale('log')
 
-# plt.savefig('GroupCompMgFilt.svg')
+
 
 #### MEAN VARIANCE 
 
@@ -172,37 +169,9 @@ plt.fill_between(Freqs[0,:], logpowerMEAN - logvariancePower,
                  color = 'grey', alpha = 0.3)
 
 plt.xscale('log')
-# plt.yscale('log')
 plt.savefig('BothCero2VARMEAN30Hz.svg')
 
 
-#%%
-
-
-'''
-         POWER SPECTRUM DENSITY
-         
-      Hack : in matplotlib exits the function   
-      plt.fill_between()
-'''
-
-confidence = 95
-Interval = (100 - confidence)/ 2
-
-MeanPow = np.mean(PowerN, axis = 0)
-PercentileMin = np.percentile(PowerN, Interval, axis = 0)
-PercentileMax = np.percentile(PowerN, 100 -Interval, axis = 0)
-MinPow = np.min
-
-
-plt.figure(4)
-# plt.plot(MeanPow , 'k-')
-plt.fill_between(Freqs[0,:], PercentileMin, PercentileMax, color = "pink", 
-                 alpha = 0.5)
-plt.xscale('log')
-plt.yscale('log')
-
-plt.savefig('005Mg.svg')
 
 #%%
 
@@ -225,57 +194,12 @@ df = df.replace("Dislaminated",0) #'BCNU trated'
 BinVal = df['Group'].values
 AperVal = df['AperiodicExp'].values
 
-from sklearn.metrics import roc_curve, auc
-
-###### ROC Curve to compare the aperiodic exponent between layering
-
-fpr, tpr, thr = roc_curve(BinVal, AperVal)
-roc_auc = auc(fpr, tpr)
-
-plt.figure()
-plt.plot(fpr, tpr, color='darkorange', lw = 2, label = f'ROC curve(area = {roc_auc:.2f})')
-plt.plot([0,1], [0,1], color='navy', lw=2, linestyle='--')
-plt.legend(loc='lower right')   
-
-### histogram Normalized 
-from scipy.stats import gaussian_kde
-df = pd.read_csv('AlphaValuesCondition.csv')
-
-df = df.replace("Eulaminated",1)  #'Control'
-df = df.replace("Dislaminated",0) #'BCNU trated'
-
-data1 = df[df['Group']==1]
-data1 = data1[data1['Activity']=='Recovery 2']
-data1 = data1['Aperiodic Value'].values
-
-data2 = df[df['Group']==0]
-data2 = data2[data2['Activity']=='Recovery 2']
-data2 = data2['Aperiodic Value'].values
-
-Kde1 = gaussian_kde(data1)
-Kde2 = gaussian_kde(data2)
-x = np.linspace(0, 1.5, 100)
-
-kde1_values = Kde1(x)
-kde2_values = Kde2(x)
-
-kde1Norm = kde1_values / np.sum(kde1_values)
-kde2Norm = kde2_values / np.sum(kde2_values)
-
-plt.figure()
-plt.plot(x, kde1Norm, label = 'Eulaminated', color = 'k', alpha = 0.5)
-plt.plot(x, kde2Norm, label = 'Dislaminated', color = 'pink', alpha = 0.5)
-plt.title('Aperiodic values with powerlaw Funct')
-plt.xlabel('Aperiodic Values')
-plt.ylabel('Density')
-plt.grid('False')
-plt.legend()
-plt.savefig('AperiodicPowerLawRecovery2.svg')
 
 
-
-
-####    Binomial distribution validation 
+"""
+             Binomial distribution validation 
+   Using both Bimodality Coefficient and Hartigan's Dip Test
+"""
 
 D1 = df[df['x'] == 5]
 D1 = D1['AperiodicExp'].values
@@ -295,8 +219,8 @@ def bimodality_coefficient(data):
 bc, skew, kurt = bimodality_coefficient(D1)
 
 
-### dip stat < 0.05 - evidence of bimodality
-### dip stat > 0.05 - likely unimodality
+### bc < 0.05 - evidence of bimodality
+### bc > 0.05 - likely unimodality
 
 # Print results
 print(f"Bimodality Coefficient: {bc}")
@@ -326,10 +250,10 @@ Dipstat, modes = dip_test(D1)
 
 
 #%%
-
-########   Correlation between epsilon values and bimodality Coeficient 
-
-
+"""
+       Correlation between epsilon values and bimodality Coeficient 
+                       Linear regression 
+"""
 #### correlation matrix with seaborn 
 
 df = pd.read_csv('EpsilonValues.csv')
@@ -338,30 +262,6 @@ data = df[["ID","Condition","Epsilon2","CB", 'Proportion']]
 
 data1 = data.sort_values('Epsilon2', ascending = False)
 data1 = data1[['Epsilon2','CB']].values
-
-# sns.clustermap(data1, metric = 'euclidean', method='ward',)
-from sklearn.linear_model import LinearRegression
-
-# Example Data (for 8 subjects)
-X = data1[:,0].reshape(-1, 1)  # Independent Variable
-Y =  data1[:,1] # Dependent Variable
-
-# Model
-model = LinearRegression()
-model.fit(X, Y)
-Y_pred = model.predict(X)
-
-# Plot
-plt.scatter(X, Y, color='blue', label='Original Data')
-plt.plot(X, Y_pred, color='red', label='Regression Line')
-plt.xlabel(r"$\epsilon$")
-plt.ylabel("Binomial Coefficient")
-plt.legend()
-plt.show()
-# Regression Coefficients
-print(f"Slope: {model.coef_[0]}, Intercept: {model.intercept_}")
-
-### If slope is negative, Y(Binomial coeff) increase as X(epsilon decrease)
 
 
 from sklearn.linear_model import LinearRegression
@@ -458,8 +358,7 @@ def slepian_multitapers(d,fs, window, NW, tapers,overlap, electrodes):
     Fid = []
     for i in range(0,len(F_log)):
       Fid.append(np.argmin(np.abs(f-F_log[i])))
-      
-    # f_Norm = np.mean(Fft_PoweT, axis=0)
+
     Fid = np.array(Fid).astype(int)
     f = np.take(f,Fid)
     Fft_PowerN = np.take(Fft_PowerT,Fid,axis = 2)
@@ -470,38 +369,25 @@ def slepian_multitapers(d,fs, window, NW, tapers,overlap, electrodes):
         Fft_PowerNorm.append(np.log10(Fft_PowerN[:,i,:]/f_Norm[i,:]))
     
     Fft_PowerNorm = np.array(Fft_PowerNorm)
-    # ff_F = np.mean(np.real(Fft_Tap), axis =1)
     
     time = np.linspace(1,300,len(taperDd_ele))
     Spectro = np.concatenate(Fft_PowerNorm, axis=1)                               ### What to covariate   axis = 0, time  axis=1, frequency
     return Fft_PowerNorm,time, f
 
 
-# fs = 1000
-# timeWin = 1000
-# timeWinID = int(np.round(timeWin/(1000/fs)))
-
 channel = DataFiltBP[56,:]               
-u_T = int(len(DataFiltBP[0,:])/25000)                                                                        # how many samples are necesary to acquiere 900 seconds  at 1.25 kHz
+u_T = int(len(DataFiltBP[0,:])/25000)                                             # how many samples are necesary to acquiere 900 seconds  at 1.25 kHz
 Time = np.linspace(0,u_T,len(channel))
 
 
-datos = signal.detrend(np.squeeze(DataFiltBP[:,:900000]))                          # channel 56
-
+datos = signal.detrend(np.squeeze(DataFiltBP[:,:900000]))                          
 Fft_Pow, TimeTap, F_f = slepian_multitapers(datos, 1000,1000, 3, 6, 3, 59)
-# plt.figure(1)
-# plt.contourf(time, f, Fft_PowerNorm[2,:,:].T, 50, cmap ='seismic')
-# # plt.contourf(time, f, Fft_PowerNorm[2,:int(LenWind//2)].T, 50, cmap ='jet')
-# plt.ylim(0.5,100)
-# plt.ylabel('Frequency (Hz)')
-# plt.xlabel('Time(s)')
-# plt.colorbar()
+
 
 #%%
 
 #####   PLOTS OF SOME spectrogram  ELECTRODES 
 
-# SpecZero = np.zeros((59,898,60))
 
 Fft_NormZero = np.insert(Fft_Pow,0,0, axis=0)
 Fft_NormZero = np.insert(Fft_NormZero,7,0, axis=0)
@@ -513,17 +399,13 @@ fig, axs = plt.subplots(nrows=8, ncols=8, figsize=(16, 12))
 plt.subplots_adjust(hspace=0.5)
 fig.suptitle("ALL electrodes 003", fontsize=12, y=0.95)
 
-# fig.colorbar(orientation='vertical')
 
 axs = axs.ravel()
 
 for d in range(64):
-    # filter df for ticker and plot on specified axes
     axs[d].contourf(TimeTap, F_f, Fft_NormZero[d,:,:].T, 50, cmap ='seismic',
                     vmin= -1, vmax=1)
     axs[d].set_ylim(0,100)
-    # chart formatting
-    # axs[d].get_legend().remove()
     axs[d].set_title(str(d))
     
     
