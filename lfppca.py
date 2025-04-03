@@ -17,7 +17,6 @@ import numpy as np
 from scipy import signal
 import scipy.io
 from scipy import stats 
-# import bct as brainconn
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 import seaborn as sns
@@ -61,7 +60,7 @@ idx[Array] = np.arange(len(Array))
 # Time = np.linspace(0,900,len(Dchannel))
 
 DataFiltBP[:] = DataFiltBP[idx,:]
-DataFiltBP = np.delete(DataFiltBP, 30,0)
+DataFiltBP = np.delete(DataFiltBP, 30,0) #electrode reference position
 
 
 ####
@@ -78,7 +77,7 @@ plt.style.use('fivethirtyeight')
 
 
 '''
-###     Power spectrum only frm the frequencies 0.5-100 Hz
+###     Power spectrum only from the frequencies 0.5-100 Hz
          #Fitting of aperiodic exponent using the same formula
              of the paper 2022 Thomas Donoghue Technical Report NATURE
 
@@ -133,33 +132,6 @@ for i in range(59):
     AperiodicExp[i] = np.abs(fit(Freqs[i,:], Power[i,:]))
     
     
-    
-##############################################3
-
-#####    APERIODIC ADJUST USING POwER LAW FITTING
-
-# def PowerLawSpec(datos,fs):   
-    
-#     Power, Freqs,_ = plt.magnitude_spectrum(datos, Fs = fs)
-#     PowerMax = np.max(Power[100:10000]) # 100:1000
-#     Min = np.min(Power[100:10000])
-#     PowerMean = np.mean(Power[100:10000])
-#     Power_Norm = (Power - Min) / (PowerMax - Min)                             
-#     # fit_function = pwl.Fit(Freqs[100:10000]) #1-100 Hz
-#     # Alpha = fit_function.power_law.alpha
-    
-#     return Power_Norm, Freqs
-
-# # Alpha, Power, Freq = PowerLawSpec(DataFiltBP[0,:100000],1000)
-
-# # InteBCNU = np.zeros(59)
-# Freqs = np.zeros((59,50001)) #150001 - 5 min  # 50001 -100 s  #5001 - 10s
-# PowerN = np.zeros((59, 50001))
-
-# for i in range(59):
-#     Freqs[i,:], PowerN[i,:] = PowerLawSpec(SignF[i,:100000],1000)
-
-#######
 smoothed_power = []
 
 for i in range(59):
@@ -167,7 +139,7 @@ for i in range(59):
     
 smoothed_power = np.array(smoothed_power)
 
-##### plot the normaliwed power spec  plotted with a gaussian filter 
+##### plot the normalized power spec  plotted with a gaussian filter 
 plt.figure(0)
 for j in range(59):
     plt.plot(Freqs[j,:], smoothed_power[j,:], c= 'pink', alpha = 0.2, linewidth = 0.8)
@@ -234,34 +206,6 @@ plt.savefig('005Mg.svg')
 
 #%%
 
-#https://stackoverflow.com/questions/60995024/power-law-distribution-fitting-in-python
-
-def funct(x, alpha, x0):
-    return((x+x0)**(-alpha))
-
-# bins = range(1,int(s_distrib.max())+2,1)
-# y_data, x_data = np.histogram(s_distrib, bins=bins, density=True)
-# x_data = x_data[:-1]
-
-# param_bounds=([0,-np.inf],[np.inf,np.inf])
-# fit = opt.curve_fit(funct,
-#                     x_data,
-#                     y_data,
-#                     bounds=param_bounds) # you can pass guess for the parameters/errors
-# alpha,x0 = fit[0]
-# print(fit[0])
-
-C = 1/integrate.quad(lambda t: funct(t,alpha,x0),1,np.inf)[0]
-
-pdf = [funct(x,alpha,x0) for x in DataFiltBP[x,:100000]]
-sse = np.sum(np.power(y_data - pdf, 2.0))
-print(sse)
-s
-fig, ax = plt.subplots(figsize=(6,4))
-ax.loglog(x_data, y_data, basex=10, basey=10,linestyle='None',  marker='.')
-ax.loglog(x_data, pdf, basex=10, basey=10,linestyle='None',  marker='.')
-
-#%%
     
 '''
            APERIODIC OR ALPHA VALUES PLOTS, HISTOGRAM
@@ -381,50 +325,6 @@ def dip_test(data, nbins = 10):
 Dipstat, modes = dip_test(D1)
 
 
-from scipy.stats import wasserstein_distance
-
-# Generate multiple synthetic bimodal datasets (simulating different conditions)
-np.random.seed(42)
-datasets = {
-    "Condition 1": np.concatenate([np.random.normal(2, 0.5, 500), np.random.normal(6, 0.5, 500)]),
-    "Condition 2": np.concatenate([np.random.normal(3, 0.5, 500), np.random.normal(7, 0.5, 500)]),
-    "Condition 3": np.concatenate([np.random.normal(2.5, 0.5, 500), np.random.normal(6.5, 0.5, 500)]),
-    "Condition 4": np.concatenate([np.random.normal(1, 0.5, 500), np.random.normal(5, 0.5, 500)])
-}
-
-# Create Wasserstein Distance matrix
-conditions = list(datasets.keys())
-num_conditions = len(conditions)
-distance_matrix = np.zeros((num_conditions, num_conditions))
-
-for i in range(num_conditions):
-    for j in range(num_conditions):
-        distance_matrix[i, j] = wasserstein_distance(datasets[conditions[i]], datasets[conditions[j]])
-
-# Print distance matrix
-print("Wasserstein Distance Matrix:")
-print(distance_matrix)
-
-# Plot Heatmap
-plt.figure(figsize=(6, 5))
-plt.imshow(distance_matrix, cmap="coolwarm", interpolation="nearest")
-plt.colorbar(label="Wasserstein Distance")
-plt.xticks(ticks=np.arange(num_conditions), labels=conditions, rotation=45)
-plt.yticks(ticks=np.arange(num_conditions), labels=conditions)
-plt.title("Pairwise Wasserstein Distance")
-plt.show()
-
-
-# Plot histogram
-plt.figure(figsize=(8,5))
-plt.hist(D1, bins=10, color='gray', alpha=0.6, density=True, label="Data Histogram")
-plt.axvline(np.mean(D1), color='r', linestyle='dashed', linewidth=2, label="Mean")
-plt.title("Histogram of Data")
-plt.xlabel("Value")
-plt.ylabel("Density")
-plt.legend()
-plt.show()
-
 #%%
 
 ########   Correlation between epsilon values and bimodality Coeficient 
@@ -500,28 +400,6 @@ plt.show()
 
 
 
-
-
-#%%
-######    Scatter plot with aperiodic values from every electrode
-
-df = pd.read_csv('AlphaValues.csv')
-Coord  =pd.read_csv('CoordMEA.csv')
-df5 = df[df['x']==17]
-Values = df5['AperiodicExp'].values
-
-Colors = np.where(Values <= 0.6, 'cornflowerblue', 'orange')                                                            
-
-plt.figure(figsize = (6,5))
-plt.clf()
-plt.scatter(Coord['X'],Coord['Y'], c = Colors,  s =300,
-            alpha =0.7,  vmax = 1.0)
-#plt.scatter(center[:,0], center[:,1], c='r', marker = 'x', alpha = 0.9)
-plt.title("009 aperiodic values ")
-plt.colorbar()
-plt.box(False)
-plt.grid(False)
-plt.savefig("009aperiodicvalues.svg")
 
 #%%
 #               SLEPIAN MULTITAPERS 
@@ -648,49 +526,7 @@ for d in range(64):
     # axs[d].get_legend().remove()
     axs[d].set_title(str(d))
     
-    #%%
-
-######          PCA LFP reduction in frequencies COV THROUGH ELECTRODES
-
-#### under review
-Cov = np.cov(Spectro.T)                                           ## Electrode shapes [ele+power:ele+power]                
-
-Cov_ = np.array([Cov[i:i+60,i:i+60] for i in range(0,len(Cov),60)]) 
-Cov_mean = np.mean(Cov_,axis=0)
-
-
-x = eigvec[:,0]
-y = eigvec[:,1]
-z = eigvec[:,2]
-
-
-plt.figure(figsize=(16,12))
-for i in range(10):
-    plt.plot(f,eigvec[:,i], alpha =0.6, label=f'Component {i}')
-    plt.legend()
-    plt.box(False)
-    #%%
-
-#### PLOTS OF COMPONENTS AND PROYECT THE EIGENVALUES TO SPECTROGRAMS
-fig, axs = plt.subplots(nrows=1, ncols=1, figsize=(16, 12)
-fig.suptitle("First 16 electrodes", fontsize=12, y=0.95)
-# fig.colorbar(orientation='vertical')
-
-axs = axs.ravel()
-for d in range(10):
-    # filter df for ticker and plot on specified axes
-    axs.plot(f,x = eigvec[:,d], 'k-', label = '{i}pca', alpha=0.3)
-    # chart formatting
-    # axs[d].get_legend().remove()
-    axs.set_title(str("PCA Components"))
-
-plt.title('3 first Components ensemble')
-plt.plot(f,x = eigvec[:,0], 'k-', label = '1st pca', alpha=0.3)
-plt.plot(f,y = eigvec[:,1],  'g-',label = '2nd pca', alpha=0.3)
-plt.plot(f,z = eigvec[:,2], 'r-',label = '3nd pca', alpha=0.3 )
-plt.plot([0,100],[0,0], "r--")
-
-
+    
 
 #%%
 '''
@@ -775,33 +611,6 @@ plt.savefig('VarBaseDESLAM.svg')
 
 #%%  
 
-## PCA list electrodes artificial separation 
-#### for control classification 
-# Ind = np.arange(0,14,1)
-# Ind1 = np.arange(14,30,1)
-# Ind2 = np.arange(30,46,1)
-# Ind3 = np.arange(46,59,1)
-
-# d = {'Electrodes': [], 'Layer' :[]} 
-# df = pd.DataFrame(d)
-
-# df['Electrodes'] = np.take(np.arange(0,59,1),Ind)   #change the index and number of layer 
-# df['Layer'] = '1'
-# dataF = pd.concat((df,df1,df2,df3))                   # concatenate all the data frames
-# dataF['PC1'] = np.abs(eigvec1[:,1].T)                # Principal components 1 and 2, choice
-
-# #####
-# ##    ELECTRODE SPACE PCA
-
-# colors = dataF['Layer'].values.astype(float)   # converto to a float the column of layer numbers
-
-# #### SCATTER BY VISUAL LAYER CLASSIFICATION
-# plt.figure(figsize = (10,10))
-# plt.scatter(dataF['PC1'],dataF['PC2'],
-#             c = colors * 0.5, s =300,      # c must be a float not int number, that because we multiply 0.5
-#             alpha =0.9)
-# plt.colorbar()
-# plt.box(False)
 
 #### SCATTER BY POSITION 
 
@@ -860,28 +669,7 @@ plt.colorbar()
 plt.box(False)
 # plt.savefig("010-basalPCAclus.svg")
 
-#####
 
-######   Scatter plot with the number of every electrode 
-X = Coord['X'].values
-y = Coord['Y'].values
-z = []
-for i in range(len(X)):
-    z.append("E"+str(i))
-    
-fig = plt.figure(figsize = (6,5))
-ax = fig.add_subplot(111)
-
-plt.scatter(X,y, c = labels.astype(float)*0.5,  s =300,
-            alpha =0.9)
-plt.title("009-basal ")
-plt.colorbar()
-plt.box(False)
-  
-for i,txt in enumerate(z):
-    ax.text(X[i], y[i], txt)
-    
-plt.show()
 #%%
 
 ####   Extract the signals of the groups 
@@ -905,8 +693,8 @@ Electrodes = 59
 # Comment or uncomment
 Cluster1 = np.array(np.where(labels == 0))
 Cluster2 = np.array(np.where(labels == 1))
-Cluster3 = np.array(np.where(labels == 3))
-# Cluster4 = np.array(np.where(labels == 3))
+Cluster3 = np.array(np.where(labels == 2))
+
 
 ### FILTER AGAIN THE SIGNAL BUT THIS TIME USING THE COMMON BAND
 filename="AP004-cero-CTRL-DWSAMPLE"
@@ -962,71 +750,6 @@ Act3 = DataFiltBP[Cluster3].reshape(len(Cluster3[0,:]),len(DataFiltBP[0,:]))
 
 
 
-
-#%%
-
-## K means 
-
-from sklearn.cluster import KMeans
-
-X = np.array((dataF['PC1'].values, dataF['PC2'].values))
-kmeans = KMeans(n_clusters = 3, n_init = 10).fit(X.T)
-
-labels = kmeans.labels_
-
-plt.figure(figsize = (6,5))
-plt.clf()
-plt.scatter(Coord['X'],Coord['Y'], c = labels.astype(float)*0.5,  s =300,
-            alpha =0.9)
-#plt.scatter(center[:,0], center[:,1], c='r', marker = 'x', alpha = 0.9)
-plt.title("005-basal CTRL")
-plt.colorbar()
-plt.box(False)
-
-# plt.savefig('005CLusterKmeans.svg')
-#%% 
-################# save the clusters
-
-d = {"Group":[], "Clusters":[], "x":[]}
-
-ClusterDf = pd.DataFrame(d)
-ClusterDf["Clusters"] = labels
-ClusterDf["x"] = 4
-ClusterDf["Group"] = 'CTRL'
-
-
-Clusters = pd.concat([ClusterDf, ClusterDf1, ClusterDf2])
-#%%
-
-##### plots eigenspectrum for every electrode 
-
-fig,axs = plt.subplots(nrows=5,ncols=2,figsize=(16,12))
-
-# fig.subtitle('Components for every electrode', fontsize = 12, y=0.95)
-axs = axs.ravel()
-
-for d in range(10):
-    axs[d].imshow(eigvec[d,:,:].T, cmap = 'seismic', vmin = minimum, vmax = maximum)
-    axs[d].set_title(str(d))
-    
-#%%
-    
-###### plot eigenspec per frequency and electrode
-    
-fig,axs = plt.subplots(nrows=1,ncols=2,figsize=(16,12))
-
-fig.suptitle('Components for every frequency', fontsize = 12, y=0.95)
-axs = axs.ravel()
-
-# cmap = plt.cm.get_cmap("jet").copy()
-# cmap.set_under(color='black')
-
-for d in range(2):
-    axs[d].pcolormesh(np.arange(0,electrodes,1),F_f, np.abs(eigvec[:,:,d].T),
-                      vmin = 0, vmax= 0.8, cmap = 'rainbow')
-    # axs[d].set_title(str(d))
-plt.colorbar()
- 
 #%%
 """
 ####   covar from electrodes, under the assumption of every electrode are 
@@ -1154,40 +877,7 @@ for d in range(3):
     axs[d].axvline(x = 1200, ymin = 0, ymax = 59, c ='yellow', linewidth = 2, alpha = 0.6)
     # axs[d].set_ylim(0,59)
     axs[d].set_title(str(d))
-#%%
-####   covar from electrodes, under the assumption of every electrode are 
- #######         Cov = E * E, sumado en tiempo por cada frecuencia 
-    
-TimeW = int(len(Fft_PowerNorm[0,:,:]))
 
-CovEf = [] 
-for i in range(0,len(f)):
-    CovEf.append(np.cov(Fft_PowerNorm[:,:,i]))
-    
-CovEf = np.array(CovEf)
-eigval = np.zeros((60,electrodes))
-eigvec = np.zeros((60,electrodes, electrodes))
-
-for i in range(60):
-    eigval[i,:],eigvec[i,:,:] = np.linalg.eigh(CovEf[i,:,:])
-    
-indexes = np.flip(np.argsort(eigval[0,:]))
-eigval = eigval[:,indexes]
-eigvec = eigvec[:,:,indexes]
-
-fig,axs = plt.subplots(nrows = 2, ncols = 4, figsize=(8,6))
-
-fig.suptitle("PC 1-6, Cov E,F BCNU 015" , fontsize=12, y=0.95)
-axs = axs.ravel()
-for d in range(8):
-    axs[d].pcolormesh(f,np.arange(0,electrodes,1),np.abs(eigvec[:,:,d].T),
-                      vmin = 0, vmax=0.8, cmap = 'jet')
-    axs[d].set_ylim(0,59)
-    axs[d].set_ylabel("electrodes")
-    # axs[d].set_xlabel("frequency")
-    axs[d].set_title(str(d))
-
-#%%
 
 ####### plot spectrogram per PCA ELECTRODE CovTime result 
 
@@ -1200,32 +890,6 @@ for d in range(8):
                       vmin = 0, vmax=0.8, cmap = 'jet')
     axs[d].set_ylim(0,50)
     axs[d].set_title(str(d))
-
-#%%
-
-
-from tensorpac.utils import PeakLockedTF, PSD, ITC, BinAmplitude
-
-psd = PSD(DataFiltBP, 1000)
-
-plt.figure(2)
-plt.subplot(1,2,1)
-ax = psd.plot(confidence=95, f_min=5, f_max=100, log=False, grid=True)
-plt.axvline(8, lw=2, color='red')
-plt.axvline(12, lw=2, color='red')
-plt.subplot(1,2,2)
-psd.plot_st_psd(cmap='Greys', f_min=2, f_max=100, vmax=.5e6, vmin=0., log=False,
-                grid=True)
-plt.axvline(8, lw=2, color='red')
-plt.axvline(12, lw=2, color='red')               
-# plt.tigh_layout()
-plt.show()
-
-
-#%%
-
-
-######## CROSS VALIDATION METHOD TO VERIFY THE CLASSIFICATION 
 
 
 
